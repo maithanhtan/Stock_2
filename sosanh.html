@@ -1,0 +1,436 @@
+<!DOCTYPE HTML>    
+<html>    
+<head>
+<!-- <script type="text/javascript" src="web/jquery.js"></script>
+<link href="web/css/bootstrap.min.css" rel="stylesheet"crossorigin="anonymous">
+<script src="web/js/bootstrap.bundle.min.js"crossorigin="anonymous"></script> -->
+<!-- <script type="text/javascript" src="web/canvas.js"></script> -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.min.js" integrity="sha384-Atwg2Pkwv9vp0ygtn1JAojH0nYbwNJLPhwyoVbhoPwBhjQPR5VtM2+xf0Uwh9KtT" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.2.0/chart.min.js" integrity="sha512-VMsZqo0ar06BMtg0tPsdgRADvl0kDHpTbugCBBrL55KmucH6hP9zWdLIWY//OTfMnzz6xWQRxQqsUFefwHuHyg==" crossorigin="anonymous"></script>
+<script src="https://canvasjs.com/assets/script/canvasjs.min.js"> </script>
+<style>
+    table {
+      font-size: 15px!important;
+    }
+    </style>
+<script type="text/javascript">
+function kFormatter(num) {
+    if (Math.abs(num) > 1000000000)
+        // return 12;
+        return Math.sign(num) * ((Math.abs(num) / 1000000000).toFixed(1)) + " tỉ";
+    else if (Math.abs(num) > 1000000)
+        return Math.sign(num) * ((Math.abs(num) / 1000000).toFixed(1)) + 'tr';
+    return Math.abs(num) > 999 ? Math.sign(num) * ((Math.abs(num) / 1000).toFixed(3)) : Math.sign(num) * Math.abs(num).toFixed(2);
+}
+
+var stock = ['acb', 'hpg', 'ssi', 'vnm', 'ctg'];
+var price_map = {};
+var price_advice = {}
+
+function getstockinfo(stock_code) {
+    $(".container-fluid").append('<div id="' + stock_code + '" class="row" style="width: 100%;"></div>');
+    // tên cổ phiếu
+    $("#" + stock_code).append('<span id="name_' + stock_code + '" style="color:#ffffff; font-size:18px; display:inline;">' + stock_code.toUpperCase() + ' <p id="price_' + stock_code + '" style="display:inline;"></p></span>');
+    $("#" + stock_code).append('<div id="col_1_' + stock_code + '" class="col"></div>');
+    $("#" + stock_code).append('<div id="col_2_' + stock_code + '" class="col"></div>');
+    // $("#" + stock_code).append('<div id="col_3_' + stock_code + '" class="col"></div>');
+    // lấy danh sách thông tin cơ bản của cổ phiếu và vẽ vào bảng
+    $.getJSON("https://finfo-api.vndirect.com.vn/v4/ratios/latest?filter=itemCode:51003,51016,51001,51002,51004,57066,51007,51006,51012,51033,51035,&where=code:" +
+        stock_code +
+        "&order=reportDate&fields=itemCode,value",
+        function(data) {
+            // console.log(data)
+            $("#col_1_" + stock_code).append('<table class="table table-bordered" style="font-weight: lighter;"><tbody id="table_' + stock_code + '"></tbody></table>');
+            $("#table_" + stock_code).append('<tr style="color:#8e8e93"><td scope="row">Vốn hóa thị trường</td><td>KLGD TB 10 phiên</td><td>Cao nhất 52 tuần</td><td>Thấp nhất 52 tuần</td><td>Số CP lưu hành</td><td>Free float</td><td>Beta</td></tr>');
+            $("#table_" + stock_code).append('<tr id="tr_01_' + stock_code + '"  style="color:#ffffff;"></tr>');
+            for (var i = 0; i < 7; i++) {
+                $("#tr_01_" + stock_code).append('<td>' + kFormatter(data.data[i].value) + '</td>');
+            }
+            $("#table_" + stock_code).append('<tr style="color:#8e8e93;"><td>P/E</td><td>P/B</td><td>ROAE</td><td>ROAA</td><td>Tỷ suất cổ tức</td><td>EPS</td><td>BVPS</td></tr>');
+            $("#table_" + stock_code).append('<tr id="tr_02_' + stock_code + '" style="color:#ffffff;"></tr>');
+            for (var i = 7; i < 14; i++) {
+                if (i == 7)
+                    $("#tr_02_" + stock_code).append('<td>' + kFormatter(data.data[i].value) + '</td>');
+                else if (i == 8)
+                    $("#tr_02_" + stock_code).append('<td>' + kFormatter(data.data[i].value) + '</td>');
+                else if (i == 9)
+                    $("#tr_02_" + stock_code).append('<td></td>');
+                else if (i == 10)
+                    $("#tr_02_" + stock_code).append('<td></td>');
+                else if (i == 11)
+                    $("#tr_02_" + stock_code).append('<td>' + kFormatter(data.data[9].value) + '</td>');
+                else if (i == 12)
+                    $("#tr_02_" + stock_code).append('<td></td>');
+                else if (i == 13)
+                    $("#tr_02_" + stock_code).append('<td></td>');
+
+            }
+        });
+}
+
+function getTextStockAdvice(signal, text) {
+    switch (signal) {
+        case "STRONGSELL": {
+            return '<p style="color:#ff0000; display:inline;"> ' + text + ' </p>';
+            break;
+        }
+        case "SELL": {
+            return '<p style="color:#ff7f7f;  display:inline;">' + text + ' </p>';
+            break;
+        }
+        case "STRONGBUY": {
+            return '<p style="color:#00ff00; display:inline;">' + text + ' </p>';
+            break;
+        }
+        case "BUY": {
+            return '<p style="color:#99ff99; display:inline;">' + text + ' </p>';
+            break;
+        }
+    }
+}
+
+function getstockadvice(stock_code) {
+    $("#col_1_" + stock_code).append('<div id="col_1_0_' + stock_code + '" class="row"></div>');
+    $("#col_1_0_" + stock_code).append('<div id="col_1_1_' + stock_code + '" class="col"></div>');
+    $("#col_1_0_" + stock_code).append('<div id="col_1_2_' + stock_code + '" class="col"></div>');
+
+    $("#col_1_1_" + stock_code).append('<table class="table table-bordered" style="font-weight: lighter;"><tbody id="table_3_0_' + stock_code + '"></tbody></table>');
+    $("#col_1_2_" + stock_code).append('<table class="table table-bordered" style="font-weight: lighter;"><tbody id="table_3_1_' + stock_code + '"></tbody></table>');
+
+    // cac chi so phan tich ky thuat
+    $.getJSON("https://finfo-api.vndirect.com.vn/v3/stocks/signal?strategy=cipShort&symbol=" + stock_code, function(data) {
+        // console.log(data)
+        price_advice['short_' + stock_code] = data.data[0].indicators
+        $("#table_3_0_" + stock_code).append('<tr style="color:#8e8e93"><td scope="row" colspan="3">Ngắn hạn: ' + getTextStockAdvice(data.data[0].totalSignal, data.data[0].totalSignal) + '</td></tr>');
+        for (var i = 0; i < data.data[0].indicators.length; i++) {
+            $("#table_3_0_" + stock_code).append('<tr id="tr_01_3_0_' + i + stock_code + '"  style="color:#ffffff;"></tr>');
+            $("#tr_01_3_0_" + i + stock_code).append('<td>' + data.data[0].indicators[i].indicatorName.replace('Tín hiệu ', '') + '</td>');
+            $("#tr_01_3_0_" + i + stock_code).append('<td>' + (data.data[0].indicators[i].lastest[0].value).toFixed(2) + '</td>');
+        }
+        updatePercentPriceAdvice(stock_code)
+    });
+
+    $.getJSON("https://finfo-api.vndirect.com.vn/v3/stocks/signal?strategy=cipLong&symbol=" + stock_code, function(data) {
+        price_advice['long_' + stock_code] = data.data[0].indicators
+        $("#table_3_1_" + stock_code).append('<tr style="color:#8e8e93"><td scope="row" colspan="3">Dài hạn: ' + getTextStockAdvice(data.data[0].totalSignal, data.data[0].totalSignal) + '</td></tr>');
+        for (var i = 0; i < data.data[0].indicators.length; i++) {
+            $("#table_3_1_" + stock_code).append('<tr id="tr_01_3_1_' + i + stock_code + '"  style="color:#ffffff;"></tr>');
+            $("#tr_01_3_1_" + i + stock_code).append('<td>' + data.data[0].indicators[i].indicatorName.replace('Tín hiệu ', '') + '</td>');
+            $("#tr_01_3_1_" + i + stock_code).append('<td>' + (data.data[0].indicators[i].lastest[0].value).toFixed(2) + '</td>');
+        }
+        updatePercentPriceAdvice(stock_code);
+    });
+}
+
+function getStockProfitability(stock_code) {
+    // lấy thông tin thay đổi giá của cổ phiếu
+    $.getJSON("https://finfo-api.vndirect.com.vn/v4/ratios?q=code:" + stock_code + "~itemCode:1000003,1000004,1000005,1000037,1000006,1000035,1000036,1000038,1000039,1000040,1000044,1000041,1000042,1000043,1000045,1000046,1000047,1000051,1000048,1000049,1000050&size=100", function(data) {
+        // console.log(data)
+        $("#col_2_" + stock_code).append('<table class="table table-bordered" style="font-weight: lighter;"><tbody id="table_2_' + stock_code + '"></tbody></table>');
+        $("#table_2_" + stock_code).append('<tr style="color:#8e8e93"><td scope="row">' + stock_code.toUpperCase() + '</td><td>Hiện tại</td><td>1T</td><td>3T</td><td>6T</td><td>1Y</td></tr>');
+
+        // hang 1
+        $("#table_2_" + stock_code).append('<tr id="tr_01_2_0_' + stock_code + '"  style="color:#ffffff;"></tr>');
+        $("#tr_01_2_0_" + stock_code).append('<td>Tăng giảm giá (%)</td>');
+        for (var i = 0; i < 5; i++) {
+            $("#tr_01_2_0_" + stock_code).append('<td id="tr_01_2_0_' + i + stock_code + '"></td>');
+        }
+        //hang 2
+        $("#table_2_" + stock_code).append('<tr id="tr_01_2_1_' + stock_code + '"  style="color:#ffffff;"></tr>');
+        $("#tr_01_2_1_" + stock_code).append('<td>P/E</td>');
+        for (var i = 0; i < 5; i++) {
+            $("#tr_01_2_1_" + stock_code).append('<td id="tr_01_2_1_' + i + stock_code + '"></td>');
+        }
+        //hang 3
+        $("#table_2_" + stock_code).append('<tr id="tr_01_2_2_' + stock_code + '"  style="color:#ffffff;"></tr>');
+        $("#tr_01_2_2_" + stock_code).append('<td>PB</td>');
+        for (var i = 0; i < 5; i++) {
+            $("#tr_01_2_2_" + stock_code).append('<td id="tr_01_2_2_' + i + stock_code + '"></td>');
+        }
+
+        data.data.forEach(element => {
+            switch (element.itemCode) {
+                //tăng giảm giá
+                case "1000003":
+                    $("#tr_01_2_0_1" + stock_code).append((element.value * 100).toFixed(2));
+                    break;
+                case "1000004":
+                    $("#tr_01_2_0_2" + stock_code).append((element.value * 100).toFixed(2));
+                    break;
+                case "1000005":
+                    $("#tr_01_2_0_3" + stock_code).append((element.value * 100).toFixed(2));
+                    break;
+                case "1000006":
+                    $("#tr_01_2_0_4" + stock_code).append((element.value * 100).toFixed(2));
+                    break;
+                    // case "1000035": $("#tr_01_2_0_4" + stock_code).append((element.value*100).toFixed(2));
+                    // break;
+
+                    //p/e
+                case "1000038":
+                    $("#tr_01_2_1_1" + stock_code).append((element.value).toFixed(2));
+                    break;
+                case "1000039":
+                    $("#tr_01_2_1_2" + stock_code).append((element.value).toFixed(2));
+                    break;
+                case "1000040":
+                    $("#tr_01_2_1_3" + stock_code).append((element.value).toFixed(2));
+                    break;
+                case "1000041":
+                    $("#tr_01_2_1_4" + stock_code).append((element.value).toFixed(2));
+                    break;
+                    // case "1000042": $("#tr_01_2_1_4" + stock_code).append((element.value).toFixed(2));
+                    // break;
+
+                    //p/b
+                case "1000045":
+                    $("#tr_01_2_2_1" + stock_code).append((element.value).toFixed(2));
+                    break;
+                case "1000046":
+                    $("#tr_01_2_2_2" + stock_code).append((element.value).toFixed(2));
+                    break;
+                case "1000047":
+                    $("#tr_01_2_2_3" + stock_code).append((element.value).toFixed(2));
+                    break;
+                case "1000048":
+                    $("#tr_01_2_2_4" + stock_code).append((element.value).toFixed(2));
+                    break;
+                    // case "1000049": $("#tr_01_2_2_4" + stock_code).append((element.value).toFixed(2));
+                    // break;
+            }
+        });
+    });
+}
+
+function getPriceWithColor(price, previous_price) {
+    if (price > previous_price) {
+        return '<p style="color:#00ff00; display:inline;">' + price + ' </p>';
+    } else if (price == previous_price) {
+        return '<p style="color:#00ff00; display:inline;">' + price + ' </p>';
+    } else
+        return '<p style="color:#ff7f7f; display:inline;">' + price + ' </p>';
+}
+
+function getTextPriceChangePercent(price, previous_price) {
+    var change = price - previous_price;
+    var percent = change / previous_price * 100;
+
+    if (price > previous_price) {
+        return '<p style="color:#00ff00; display:inline;">(' + percent.toFixed(2) + '%)</p>';
+    } else if (price == previous_price) {
+        return '<p style="color:#ffff00; display:inline;">(' + percent.toFixed(2) + '%)</p>';
+    } else
+        return '<p style="color:#ff7f7f; display:inline;">(' + percent.toFixed(2) + '%) </p>';
+}
+
+function getStockPriceHistory(stock_code) {
+    // lấy giá cổ phiếu theo từng ngày
+    $.getJSON('https://finfo-api.vndirect.com.vn/v4/stock_prices?sort=date&q=code:' + stock_code + '&size=10000&page=1', function(data) {
+        $("#price_" + stock_code).append('Giá thấp: ' + getPriceWithColor(data.data[0].low, data.data[1].close) + ' Hiện tại: ' + getPriceWithColor(data.data[0].close, data.data[1].close) +
+            ' ' + getTextPriceChangePercent(data.data[0].close, data.data[1].close) +
+            ' Giá cao: ' + getPriceWithColor(data.data[0].high, data.data[1].close) + ' Giá TB: ' + getPriceWithColor(data.data[0].average, data.data[1].close));
+
+        // console.log(data)    
+
+        price_history = []
+        data.data.forEach(element => {
+            price_history.push(element.adClose)
+        });
+
+        price_history.reverse()
+
+        // console.log(stock_code)
+
+        var ema12 = EMACalc(price_history, 12);
+        var ema26 = EMACalc(price_history, 26);
+
+        macd = []
+        for (var i = 0; i < ema12.length; i++) {
+            macd.push(ema12[i] - ema26[i]);
+        }
+        var signal = EMACalc(macd, 9);
+
+        // ket qua cuoi cung
+        macd.reverse()
+        signal.reverse()
+
+        var macd_histogram = []
+        for (var i = 0; i < macd.length; i++) {
+            macd_histogram.push(macd[i] - signal[i]);
+        }
+
+        // cap nhat du lieu tín hiệu kỹ thuật
+        price_map[stock_code] = price_history
+        updatePercentPriceAdvice(stock_code);
+
+
+        var avg_macd_his_10 = 0
+        var avg_macd_his_5 = 0
+        var avg_macd_his_3 = 0
+        var avg_macd_his_today = macd_histogram[0]
+        for (var i = 0; i < 10; i++) {
+            avg_macd_his_10 += macd_histogram[i];
+            if (i < 5)
+                avg_macd_his_5 += macd_histogram[i];
+            if (i < 3)
+                avg_macd_his_3 += macd_histogram[i];
+        }
+        avg_macd_his_10 = avg_macd_his_10 / 10
+        avg_macd_his_5 = avg_macd_his_5 / 5
+        avg_macd_his_3 = avg_macd_his_3 / 3
+
+        if (macd_histogram[0] > macd_histogram[1]) {
+
+        }
+
+        // console.log(macd_histogram[0]);
+
+        $("#col_2_" + stock_code).append('<canvas id="macd_' + stock_code + '" width="600" height="150"></canvas>');
+        createchartmacd(stock_code, price_history, macd_histogram);
+    });
+}
+
+function createchartmacd(stock_code, price_history, macd_histogram) {
+    var ctx = document.getElementById('macd_' + stock_code).getContext('2d');
+    data_macd_10 = [];
+    data_price_10 = [];
+    labels = [];
+    price_history.reverse()
+    for (var i = 0; i < 50; i++) {
+        data_macd_10.push(macd_histogram[i]);
+        data_price_10.push(price_history[i]);
+        labels.push(price_history[i]);
+    }
+    var myChart = new Chart(ctx, {
+        data: {
+            labels: labels.reverse(),
+            datasets: [{
+                label: 'MACD Histogram',
+                data: data_macd_10.reverse(),
+                yAxisID: 'A',
+                type: 'bar',
+                backgroundColor: [
+                    // 'rgba(255, 99, 132, 0.2)',
+                    // 'rgba(54, 162, 235, 0.2)',
+                    // 'rgba(255, 206, 86, 0.2)',
+                    // 'rgba(75, 192, 192, 0.2)',
+                    // 'rgba(153, 102, 255, 0.2)',
+                    'rgba(255, 159, 64, 0.2)'
+                ],
+                borderColor: [
+                    // 'rgba(255, 99, 132, 1)',
+                    // 'rgba(54, 162, 235, 1)',
+                    // 'rgba(255, 206, 86, 1)',
+                    // 'rgba(75, 192, 192, 1)',
+                    // 'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }, {
+                label: 'Giá',
+                data: data_price_10.reverse(),
+                yAxisID: 'B',
+                type: 'line',
+                backgroundColor: [
+                    // 'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    // 'rgba(255, 206, 86, 0.2)',
+                    // 'rgba(75, 192, 192, 0.2)',
+                    // 'rgba(153, 102, 255, 0.2)',
+                    // 'rgba(255, 159, 64, 0.2)'
+                ],
+                borderColor: [
+                    // 'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    // 'rgba(255, 206, 86, 1)',
+                    // 'rgba(75, 192, 192, 1)',
+                    // 'rgba(153, 102, 255, 1)',
+                    // 'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                // y: {
+                //     beginAtZero: true
+                // },
+                yAxes: [{
+                    id: 'A',
+                    type: 'line',
+                    position: 'left',
+                }, {
+                    id: 'B',
+                    type: 'bar',
+                    beginAtZero: true,
+                    position: "right",
+                }]
+            },
+
+        }
+    });
+}
+
+function EMACalc(mArray, mRange) {
+    var k = 2 / (mRange + 1);
+    // first item is just the same as the first item in the input
+    emaArray = [mArray[0]];
+    // for the rest of the items, they are computed with the previous one
+    for (var i = 1; i < mArray.length; i++) {
+        emaArray.push(mArray[i] * k + emaArray[i - 1] * (1 - k));
+    }
+    return emaArray;
+}
+
+function updatePercentPriceAdvice(stock_code) {
+    current_price = price_map[stock_code][0];
+    price_advice_short_item = price_advice['short_' + stock_code]
+    price_advice_long_item = price_advice['long_' + stock_code]
+
+    if (current_price == undefined || price_advice_short_item == undefined || price_advice_long_item == undefined)
+        return;
+
+    //short
+    for (var i = 0; i < price_advice_short_item.length; i++) {
+        element = price_advice_short_item[i]
+        if (element.indicator != 'MACD Histogram')
+            $("#tr_01_3_0_" + i + stock_code).append(
+                '<td>' + getTextStockAdvice(element.signal,
+                    ((current_price - element.lastest[0].value) / element.lastest[0].value * 100).toFixed(2) + "%") +
+                '</td>'
+            );
+        else
+            $("#tr_01_3_0_" + i + stock_code).append('<td></td>');
+    }
+    // long
+    for (var i = 0; i < price_advice_long_item.length; i++) {
+        element = price_advice_long_item[i]
+        console.log(element)
+        if (element.indicator != "MACD Signal")
+            $("#tr_01_3_1_" + i + stock_code).append(
+                '<td>' + getTextStockAdvice(element.signal,
+                    ((current_price - element.lastest[0].value) / element.lastest[0].value * 100).toFixed(2) + "%") +
+                '</td>'
+            );
+        else
+            $("#tr_01_3_1_" + i + stock_code).append('<td></td>');
+    }
+}
+
+window.onload = function() {
+
+    stock.forEach(element => {
+        getstockinfo(element);
+        getStockPriceHistory(element);
+        getstockadvice(element);
+        getStockProfitability(element);
+    });
+}
+</script>
+</head>
+<body style="background-color:#181222;">
+    <div class="container-fluid"></div>
+</body>
+</html>

@@ -1,0 +1,76 @@
+điểm nhấn cơ bản
+https://finfo-api.vndirect.com.vn/v4/ratios?q=code:ACB~itemCode:55003,55002,56007,57016,57017,57010,53080,57012,57009,57043,57045,57050,57031,53073,52001,52002~reportDate:2020-12-31
+
+thay thời gian bằng 2019-12-31
+
+tính 3 tháng đầu năm (filter từ đầu năm)
+https://finfo-api.vndirect.com.vn/v4/ratios/latest?order=reportDate&where=code:ACB~reportDate:gte:2021-01-01&filter=itemCode:55003,55002,56007,57016,57017,57010,53080,57012,57009,57044,57046,57050,57031,53074,52001,52002
+
+
+kết quả sinh lợi trong thời gian 1t, 3t, 6t, từ đầu năm... của acb so với vnindex, ngoài ra có thể dùng để so sánh với cái mã khác nhau
+
+https://finfo-api.vndirect.com.vn/v4/ratios?q=code:ACB,VNINDEX~itemCode:1000003,1000004,1000005,1000037,1000006,1000035,1000036,1000038,1000039,1000040,1000044,1000041,1000042,1000043,1000045,1000046,1000047,1000051,1000048,1000049,1000050&size=100
+
+kế hoạch kinh doanh theo từng năm
+https://finfo-api.vndirect.com.vn/v4/company_forecast?q=code:ACB~fiscalYear:gte:2017
+
+góc nhìn kỹ thuật
+
+ngắn hạn
+https://finfo-api.vndirect.com.vn/v3/stocks/signal?strategy=cipShort&symbol=ACB
+
+dài hạn
+https://finfo-api.vndirect.com.vn/v3/stocks/signal?strategy=cipLong&symbol=ACB
+
+
+thông tin cổ phiếu: 
+Vốn hóa thị trường
+78,140 tỷ
+KLGD TB 10 phiên
+10,770,860
+Cao nhất 52 tuần
+36.20
+Thấp nhất 52 tuần
+16.47
+Số CP lưu hành
+2,162 trCP
+Free float
+75%
+Beta
+0.5
+P/E
+9.1x
+P/B
+2.1x
+ROAE
+25.2%
+ROAA
+2.0%
+Tỷ suất cổ tức
+0%
+EPS
+3,992
+BVPS
+17,547
+(kết quả của ngày hôm trước)
+https://finfo-api.vndirect.com.vn/v4/ratios/latest?filter=itemCode:51003,51016,51001,51002,51004,57066,51007,51006,51012,51033,51035,&where=code:ACB~reportDate:gt:2021-03-29&order=reportDate&fields=itemCode,value
+
+bảng cân đối kế toán
+https://finfo-api.vndirect.com.vn/v3/stocks/financialStatement?secCodes=ACB&reportTypes=QUARTER&modelTypes=1,89,101,411&fromDate=2019-03-30&toDate=2021-06-30
+
+
+đánh giá hiệu quả thị trường 
+vnindex
+https://finfo-api.vndirect.com.vn/v4/ratios/latest?order=reportDate&where=code:VNINDEX&filter=itemCode:81007,81008,81013,81014,81016,81017,82005,82006,82007,82008,81001,81002,81004,81005
+
+vn30
+https://finfo-api.vndirect.com.vn/v4/ratios/latest?order=reportDate&where=code:VN30&filter=itemCode:81007,81008,81013,81014,81016,81017,82005,82006,82007,82008,81001,81002,81004,81005
+
+danh sách cổ phiếu
+https://finfo-api.vndirect.com.vn/v4/stocks?fields=code,shortName,floor&q=type:stock,ifc~floor:HOSE,HNX,UPCOM&size=9999
+
+top 10 cổ phiếu tăng giá
+https://finfo-api.vndirect.com.vn/v4/top_of_stocks?q=index:VN30~avgVol20p:gte:10000~changePrice1dPct:gt:0&size=10&sort=changePrice1dPct
+
+danh sách cổ phiếu vn30
+https://finfo-api.vndirect.com.vn/v4/top_of_stocks?q=index:VN30
